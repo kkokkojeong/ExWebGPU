@@ -1,11 +1,8 @@
-// https://github.com/mrdoob/three.js/blob/4843e710b333b8d23cf011751130b089d597471c/examples/jsm/renderers/webgpu/WebGPURenderer.js
-// ref: https://carmencincotti.com/2022-04-18/drawing-a-webgpu-triangle/
-type ExTriangleOptions = {
-    color: string; // rgba
-}
-
 //
 // shader codes
+
+import WebGPUHelper from "../util/WebGPUHelper";
+
 //
 const vertexShader = `
     struct Output {
@@ -14,34 +11,11 @@ const vertexShader = `
     };
 
     @vertex
-    fn main(@builtin(vertex_index) VertexIndex: u32) -> Output {
-        var pos : array<vec2<f32>, 9> = array<vec2<f32>, 9>(             
-            vec2<f32>(-0.63,  0.80),
-            vec2<f32>(-0.65,  0.20),
-            vec2<f32>(-0.20,  0.60),
-            vec2<f32>(-0.37, -0.07),
-            vec2<f32>( 0.05,  0.18),
-            vec2<f32>(-0.13, -0.40),
-            vec2<f32>( 0.30, -0.13),
-            vec2<f32>( 0.13, -0.64),
-            vec2<f32>( 0.70, -0.30)     
-        );
-        var color : array<vec3<f32>, 9> = array<vec3<f32>, 9>(             
-            vec3<f32>(1.0, 0.0, 0.0),
-            vec3<f32>(0.0, 1.0, 0.0),
-            vec3<f32>(0.0, 0.0, 1.0),
-            vec3<f32>(1.0, 0.0, 0.0),
-            vec3<f32>(0.0, 1.0, 0.0),
-            vec3<f32>(0.0, 0.0, 1.0),
-            vec3<f32>(1.0, 0.0, 0.0),
-            vec3<f32>(0.0, 1.0, 0.0),
-            vec3<f32>(0.0, 0.0, 1.0),  
-        );
-
+    fn main(@location(0) pos: vec4<f32>, @location(1) color: vec4<f32>) -> Output {
         var output: Output;
 
-        output.Position = vec4<f32>(pos[VertexIndex], 0.0, 1.0);
-        output.vColor = vec4<f32>(color[VertexIndex], 1.0);
+        output.Position = pos;
+        output.vColor = color;
 
         return output;
     }
@@ -53,10 +27,9 @@ const fragmentShader = `
     }
 `;
 
-class ExTriangle {
+class ExSquare {
 
     private _canvas: HTMLCanvasElement;
-    private _options: ExTriangleOptions;
 
     // WebGPU
     private _adapter: GPUAdapter | null = null;
@@ -64,11 +37,13 @@ class ExTriangle {
     private _context: GPUCanvasContext | null = null;
     private _pipeline: GPURenderPipeline | null = null;
 
+    private _vertexBuffer: GPUBuffer | null = null;
+    private _colorBuffer: GPUBuffer | null = null;
+
     private _initialized: boolean = false;
 
-    constructor(canvasId: string, options: ExTriangleOptions) {
+    constructor(canvasId: string) {
         this._canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-        this._options = options;
     }
 
     public async render() {
@@ -90,7 +65,12 @@ class ExTriangle {
         });
 
         renderPass.setPipeline(pipeline);
-        renderPass.draw(9, 1, 0, 0);
+
+        // draw vertices using buffer
+        renderPass.setVertexBuffer(0, this._vertexBuffer);
+        renderPass.setVertexBuffer(1, this._colorBuffer);
+
+        renderPass.draw(6);
         renderPass.end();
 
         device.queue.submit([commandEncoder.finish()]);
@@ -112,11 +92,41 @@ class ExTriangle {
         this._device = device;
         this._context = context;
 
+        this.createVerticesAndColors();
+
         this.configureContext();
 
         this.createRenderPipeline();
 
         this._initialized = true;
+    }
+
+    private createVerticesAndColors() {
+        const device = this._device;
+        if (!device) {
+            return;
+        }
+
+        // square data
+        const vertices = new Float32Array([
+            -0.5, -0.5,  // vertex a
+             0.5, -0.5,  // vertex b
+            -0.5,  0.5,  // vertex d
+            -0.5,  0.5,  // vertex d
+             0.5, -0.5,  // vertex b
+             0.5,  0.5,  // vertex c
+        ]);
+        const colors = new Float32Array([
+            1, 0, 0,    // vertex a: red
+            0, 1, 0,    // vertex b: green
+            1, 1, 0,    // vertex d: yellow
+            1, 1, 0,    // vertex d: yellow
+            0, 1, 0,    // vertex b: green
+            0, 0, 1     // vertex c: blue
+        ]);
+
+        this._vertexBuffer = WebGPUHelper.createBuffer(device, vertices);
+        this._colorBuffer = WebGPUHelper.createBuffer(device, colors);
     }
 
     private configureContext() {
@@ -145,7 +155,26 @@ class ExTriangle {
                 module: device.createShaderModule({
                     code: vertexShader
                 }),
-                entryPoint: "main"
+                entryPoint: "main",
+                // if use GPU buffers, the buffers property is a must
+                buffers: [
+                    {
+                        arrayStride: 8,
+                        attributes: [{
+                            shaderLocation: 0,
+                            format: "float32x2",
+                            offset: 0
+                        }]
+                    },
+                    {
+                        arrayStride: 12,
+                        attributes: [{
+                            shaderLocation: 1,
+                            format: "float32x3",
+                            offset: 0
+                        }]
+                    },
+                ]
             },
             fragment: {
                 module: device.createShaderModule({
@@ -164,4 +193,4 @@ class ExTriangle {
     }
 }
 
-export default ExTriangle;
+export default ExSquare;
