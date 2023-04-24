@@ -16,3 +16,4 @@ if (!WebGPUHelper.isAvailable()) {
         `;
     }
 }
+console.log("aaaa!!!");
