@@ -39,6 +39,7 @@ class ExSquare {
 
     private _vertexBuffer: GPUBuffer | null = null;
     private _colorBuffer: GPUBuffer | null = null;
+    private _indexBuffer: GPUBuffer | null = null;
 
     private _initialized: boolean = false;
 
@@ -70,7 +71,14 @@ class ExSquare {
         renderPass.setVertexBuffer(0, this._vertexBuffer);
         renderPass.setVertexBuffer(1, this._colorBuffer);
 
-        renderPass.draw(6);
+        // using indices
+        renderPass.setIndexBuffer(this._indexBuffer as GPUBuffer, "uint32");
+
+        // renderPass.draw(6);
+
+        // draw using indcies
+        renderPass.drawIndexed(6);
+
         renderPass.end();
 
         device.queue.submit([commandEncoder.finish()]);
@@ -108,25 +116,41 @@ class ExSquare {
         }
 
         // square data
+        // const vertices = new Float32Array([
+        //     -0.5, -0.5,  // vertex a
+        //      0.5, -0.5,  // vertex b
+        //     -0.5,  0.5,  // vertex d
+        //     -0.5,  0.5,  // vertex d
+        //      0.5, -0.5,  // vertex b
+        //      0.5,  0.5,  // vertex c
+        // ]);
+        // const colors = new Float32Array([
+        //     1, 0, 0,    // vertex a: red
+        //     0, 1, 0,    // vertex b: green
+        //     1, 1, 0,    // vertex d: yellow
+        //     1, 1, 0,    // vertex d: yellow
+        //     0, 1, 0,    // vertex b: green
+        //     0, 0, 1     // vertex c: blue
+        // ]);
+
+        // using index buffer
         const vertices = new Float32Array([
             -0.5, -0.5,  // vertex a
              0.5, -0.5,  // vertex b
-            -0.5,  0.5,  // vertex d
-            -0.5,  0.5,  // vertex d
-             0.5, -0.5,  // vertex b
              0.5,  0.5,  // vertex c
+            -0.5,  0.5,  // vertex d
         ]);
         const colors = new Float32Array([
             1, 0, 0,    // vertex a: red
             0, 1, 0,    // vertex b: green
-            1, 1, 0,    // vertex d: yellow
-            1, 1, 0,    // vertex d: yellow
-            0, 1, 0,    // vertex b: green
-            0, 0, 1     // vertex c: blue
+            0, 0, 1,    // vertex b: green
+            1, 1, 1     // vertex c: blue
         ]);
+        const indices = new Uint32Array([0, 1, 3, 3, 1, 2]);
 
-        this._vertexBuffer = WebGPUHelper.createBuffer(device, vertices);
-        this._colorBuffer = WebGPUHelper.createBuffer(device, colors);
+        this._vertexBuffer = WebGPUHelper.createBuffer(device, vertices, GPUBufferUsage.VERTEX);
+        this._indexBuffer = WebGPUHelper.createBuffer(device, indices, GPUBufferUsage.INDEX);
+        this._colorBuffer = WebGPUHelper.createBuffer(device, colors, GPUBufferUsage.VERTEX);
     }
 
     private configureContext() {

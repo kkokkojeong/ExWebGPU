@@ -3,14 +3,17 @@ class WebGPUHelper {
         return !!navigator.gpu;
     }
 
-    static createBuffer(device: GPUDevice, data: Float32Array): GPUBuffer {
+    static createBuffer(device: GPUDevice, data: Float32Array | Uint32Array, usage: GPUBufferUsageFlags = GPUBufferUsage.VERTEX): GPUBuffer {
         const buffer = device.createBuffer({
             size: data.byteLength,
-            usage: GPUBufferUsage.VERTEX,
+            usage: usage,
             mappedAtCreation: true
         });
 
-        new Float32Array(buffer.getMappedRange()).set(data);
+        const TypedArray = data instanceof Float32Array ? Float32Array : Uint32Array;
+
+
+        new TypedArray(buffer.getMappedRange()).set(data);
         buffer.unmap();
 
         return buffer;
