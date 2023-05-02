@@ -1,4 +1,4 @@
-import { mat4 } from "gl-matrix";
+import { vec3, mat4 } from "gl-matrix";
 import {vertices, colors} from "../data/cube-vertices-colors";
 import Transform from "../transform/transform";
 import WebGPUHelper from "../util/WebGPUHelper";
@@ -46,11 +46,18 @@ class ExCube {
     private _uniformBuffer: GPUBuffer | null = null;
     private _uniformBindGroup: GPUBindGroup | null = null;
 
+    // rotation for animation
+    private _rotation: vec3 = [0, 0, 0];
+
     private _initialized: boolean = false;
 
     constructor(canvasId: string) {
         this._canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         console.log(vertices, colors);
+    }
+
+    public setRotation(rotation: vec3) {
+        this._rotation = rotation;
     }
 
     public async render() {
@@ -95,8 +102,8 @@ class ExCube {
         // uniforms
         const mvp = mat4.create();
 
-        const m = Transform.getModelMatrix();
-        
+        const m = Transform.getModelMatrix(undefined, this._rotation, undefined);
+
         // test model matrix...
         // const m = Transform.getModelMatrix([0, 0, 0], [0, 0, 0], [0.5, 0.5, 0.5]);
 
@@ -104,14 +111,10 @@ class ExCube {
         // const v = Transform.getCameraMatrix([0, 0, 3], [0, 0, 0], [0, 1, 0]);
         const v = Transform.getCameraMatrix([2, 2, 4], [0, 0, 0], [0, 1, 0]);
 
-        console.log(aspectRatio, this._canvas.width , this._canvas.height);
-        
         mat4.multiply(mvp, p, v);
         mat4.multiply(mvp, mvp, m);
 
         this.createUniformBufferBinding();
-
-        console.log(this._uniformBuffer, mvp, m);
 
         device.queue.writeBuffer(this._uniformBuffer as GPUBuffer, 0, mvp as ArrayBuffer);
 
