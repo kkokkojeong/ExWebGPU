@@ -19,6 +19,8 @@
       "noUnusedParameters": true,
       "noFallthroughCasesInSwitch": true,
 
+      "strictPropertyInitialization": false,
+
       /* WebGPU type */
       "typeRoots": ["./node_modules/@webgpu/types"]
     },

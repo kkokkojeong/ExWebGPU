@@ -1,5 +1,6 @@
 import { vec3, mat4 } from "gl-matrix";
-import {vertices, colors} from "../data/cube-vertices-colors";
+import {vertices, colors, indices} from "../data/cube-vertices-colors-indices";
+// import {vertices, colors} from "../data/cube-vertices-colors";
 import Transform from "../transform/transform";
 import WebGPUHelper from "../util/WebGPUHelper";
 
@@ -42,6 +43,7 @@ class ExCube {
 
     private _vertexBuffer: GPUBuffer | null = null;
     private _colorBuffer: GPUBuffer | null = null;
+    private _indexBuffer: GPUBuffer | null = null;
 
     private _uniformBuffer: GPUBuffer | null = null;
     private _uniformBindGroup: GPUBindGroup | null = null;
@@ -96,7 +98,8 @@ class ExCube {
             }
         });
 
-        const numOfVertices = vertices.length / 3; // 18 / 3(x,y,z)
+        // const numOfVertices = vertices.length / 3; // 18 / 3(x,y,z)
+        const numOfVertices = indices.length;
         const aspectRatio = this._canvas.width / this._canvas.height;
 
         // uniforms
@@ -124,10 +127,14 @@ class ExCube {
         renderPass.setVertexBuffer(0, this._vertexBuffer);
         renderPass.setVertexBuffer(1, this._colorBuffer);
 
+        renderPass.setIndexBuffer(this._indexBuffer as GPUBuffer, "uint32");
+
         // binding unifrom
         renderPass.setBindGroup(0, this._uniformBindGroup);
 
-        renderPass.draw(numOfVertices);
+        // renderPass.draw(numOfVertices);
+
+        renderPass.drawIndexed(numOfVertices);
 
         renderPass.end();
 
@@ -181,6 +188,8 @@ class ExCube {
 
         this._vertexBuffer = WebGPUHelper.createBuffer(device, vertices, GPUBufferUsage.VERTEX);
         this._colorBuffer = WebGPUHelper.createBuffer(device, colors, GPUBufferUsage.VERTEX);
+        
+        this._indexBuffer = WebGPUHelper.createBuffer(device, indices, GPUBufferUsage.INDEX);
     }
 
     private createUniformBufferBinding() {
