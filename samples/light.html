@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<head>
+   <meta charset="utf-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <title>WebGPU Light</title>
+   <meta name="description" content="">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+   <!-- dat.GUI -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js" integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+
+<body>
+    <h1>Cube with Lighting</h1><br>
+
+    <div id="dat-gui"></div>
+    <canvas id="canvas-webgpu" width="640" height="480"></canvas>
+    
+    <script type="module">
+        import ExLight from "/src/examples/light.ts";
+
+        window.onload = () => {
+            const ex = new ExLight("canvas-webgpu");
+            // ex.render();
+
+            // let animationId;
+            // let rotation = [0, 0, 0]
+
+            // const animate = () => {
+            //     // rotation[0] += 1.5;
+            //     // rotation[1] += 0;
+            //     // rotation[2] += 0;
+
+            //     rotation[1] += 1;
+
+            //     if (rotation[0] >= 360) rotation[0] = 0;
+            //     if (rotation[1] >= 360) rotation[1] = 0;
+            //     if (rotation[2] >= 360) rotation[2] = 0;
+
+            //     ex.setRotation(rotation);
+            //     ex.render();
+
+            //     animationId = window.requestAnimationFrame(animate);
+            // }
+
+            // animate();
+
+            // gui
+            // const gui = new dat.GUI({ name: "cube-animation" });
+            // const guiParams = {
+            //     animation: true
+            // };
+            // gui.add(guiParams, 'animation')
+            //     .onFinishChange((checked) => {
+            //         if (!checked) {
+            //             window.cancelAnimationFrame(animationId)
+            //         } else {
+            //             animationId = window.requestAnimationFrame(animate);
+            //         }
+            //     });
+
+            // document.getElementById("dat-gui").appendChild(gui.domElement);
+        };
+    </script>
+</body>
+</html>
