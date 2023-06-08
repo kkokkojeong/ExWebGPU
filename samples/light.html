@@ -18,10 +18,16 @@
     
     <script type="module">
         import ExLight from "/src/examples/light.ts";
+        import WebGPUHelper from "/src/util/WebGPUHelper.ts"
 
         window.onload = () => {
+            if (!WebGPUHelper.isAvailable()) {
+                alert("not supported browser for WebGPU");
+                return;
+            }
+
             const ex = new ExLight("canvas-webgpu");
-            // ex.render();
+            ex.render();
 
             // let animationId;
             // let rotation = [0, 0, 0]
