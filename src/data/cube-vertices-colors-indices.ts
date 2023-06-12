@@ -10,8 +10,18 @@ export const vertices = new Float32Array([
     -1,  1, -1,
 ]);
 
+export const normals = new Float32Array([
+    // normal 다시 계산 필요
+    0, 0, 1, // front
+    1, 0, 0, // right
+    0, 0, -1, // back
+    -1, 0, 0, // left
+    0, 1, 0, // top
+    0, -1, 0// bottom
+])
+
 export const colors = new Float32Array([
-    //  color
+    // color
     0, 0, 1,
     1, 0, 1, 
     1, 1, 1, 

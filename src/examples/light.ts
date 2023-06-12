@@ -1,5 +1,6 @@
 
-import {vertices, colors, indices} from "../data/cube-vertices-colors-indices";
+import WebGPUHelper from "../util/WebGPUHelper";
+import {vertices, normals, indices} from "../data/cube-vertices-colors-indices";
 
 class ExLight {
 
@@ -8,7 +9,11 @@ class ExLight {
     private _adapter: GPUAdapter | null;
     private _device: GPUDevice | null;
     private _context: GPUCanvasContext | null;
-    private _format: GPUTextureFormat
+    private _format: GPUTextureFormat;
+
+    private _vertexBuffer: GPUBuffer;
+    private _nomralBuffer: GPUBuffer;
+    private _indexBuffer: GPUBuffer;
 
     private _initialized: boolean = false;
 
@@ -53,6 +58,9 @@ class ExLight {
         this._format = format;
 
         // create buffer, color
+        this._vertexBuffer = WebGPUHelper.createBuffer(device, vertices, GPUBufferUsage.VERTEX);
+        this._nomralBuffer = WebGPUHelper.createBuffer(device, normals, GPUBufferUsage.VERTEX);
+        this._indexBuffer = WebGPUHelper.createBuffer(device, indices, GPUBufferUsage.INDEX);
 
         // render pipeline
 
