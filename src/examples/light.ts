@@ -16,7 +16,7 @@ const vertexShader = `
     @binding(0) @group(0) var<uniform> modelViewProj : mat4x4<f32>;
 
     @vertex
-    fn main(@location(0) pos: vec4<f32>) -> Output {
+    fn main(@location(0) pos: vec4<f32>, @location(1) normal: vec4<f32>) -> Output {
         var output: Output;
 
         output.Position = modelViewProj * pos;
@@ -128,7 +128,7 @@ class ExLight {
 
         // draw vertices using buffer
         renderPass.setVertexBuffer(0, this._vertexBuffer);
-        // renderPass.setVertexBuffer(1, this._colorBuffer);
+        renderPass.setVertexBuffer(1, this._normalBuffer);
 
         renderPass.setIndexBuffer(this._indexBuffer as GPUBuffer, "uint32");
 
@@ -184,6 +184,7 @@ class ExLight {
                 entryPoint: "main",
                 // if use GPU buffers, the buffers property is a must
                 buffers: [
+                    // vertices
                     {
                         arrayStride: 12,
                         attributes: [{
@@ -192,6 +193,15 @@ class ExLight {
                             offset: 0
                         }]
                     },
+                    // normals
+                    {
+                        arrayStride: 12,
+                        attributes: [{
+                            shaderLocation: 1,
+                            format: "float32x3",
+                            offset: 0
+                        }]
+                    }
                 ]
             },
             fragment: {
