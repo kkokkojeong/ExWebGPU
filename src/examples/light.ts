@@ -74,6 +74,13 @@ class ExLight {
 
     constructor(id: string) {
         this._canvas = document.getElementById(id) as HTMLCanvasElement;
+        const w = this._canvas.width;
+        const h = this._canvas.height;
+
+        this._canvas.style.width = `${w}px`;
+        this._canvas.style.height = `${h}px`;
+        this._canvas.width = w * devicePixelRatio || 1;
+        this._canvas.height = h * devicePixelRatio || 1;
     }
 
     public async render() {
@@ -87,6 +94,8 @@ class ExLight {
 
         const numOfVertices = this.cube.positions.length / 3;
         const aspectRatio = this._canvas.width / this._canvas.height;
+
+        console.log(this._canvas.width)
 
         console.log(numOfVertices);
 
