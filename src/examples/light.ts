@@ -31,9 +31,19 @@ const vertexShader = `
     }
 `;
 const fragmentShader = `
+    // The maximum number of GPUBindGroupLayouts allowed in bindGroupLayouts when creating a GPUPipelineLayout.
+    // maxBindGroups is 4
+    // so, uniform variables need to be structured.
+    //
+    // But since this is a simple example, it is ignored :)
+    // struct LightProperties {
+    //     light_pos: vec3<f32>,
+    //     u_eye_pos: vec4<f32>,
+    // };
 
     @binding(2) @group(0) var<uniform> u_light_pos: vec4<f32>;
-    @binding(3) @group(0) var<uniform> u_light_color: vec4<f32>;
+    @binding(3) @group(0) var<uniform> u_eye_pos: vec4<f32>;
+    // @binding(4) @group(0) var<uniform> u_light_color: vec4<f32>;
 
     @fragment
     fn main(@location(0) v_position: vec4<f32>, @location(1) v_normal: vec4<f32>) -> @location(0) vec4<f32> {
@@ -41,10 +51,16 @@ const fragmentShader = `
         // https://en.wikipedia.org/wiki/Phong_shading
         var N: vec3<f32> = normalize(v_normal.xyz);
         var L: vec3<f32> = normalize(u_light_pos.xyz - v_position.xyz);
+        var V: vec3<f32> = normalize(u_eye_pos.xyz - v_position.xyz);
+        var H: vec3<f32> = normalize(L + V);
+
+        var color: vec4<f32> = vec4<f32>(1.0, 0.0, 0.0, 1.0);
+        var specular_shininess: f32 = 10.0;
 
         var diffuse: f32 = max(dot(N, L), 0.0);
+        var specular: f32 = pow(max(dot(N, H), 0.0), specular_shininess);
         
-        return u_light_color * diffuse;
+        return color * diffuse + vec4<f32>(1.0, 1.0, 0.0, 1.0) * specular;
     }
 `;
 
@@ -64,7 +80,8 @@ class ExLight {
     private _modelViewProjBuffer: GPUBuffer;
     private _normalMatBuffer: GPUBuffer;
     private _lightPosBuffer: GPUBuffer;
-    private _lightColorBuffer: GPUBuffer;
+    private _eyePosBuffer: GPUBuffer;
+    // private _lightColorBuffer: GPUBuffer;
 
     private _bindGroup: GPUBindGroup;
 
@@ -119,7 +136,8 @@ class ExLight {
         // light properties
         //
         const lightPosition = vec4.fromValues(2, 2, 4, 1);
-        const lightColor = vec4.fromValues(1.0, 0, 0, 1);
+        const cameraPosition = vec4.fromValues(2, 2, 4, 1);
+        // const lightColor = vec4.fromValues(1.0, 0, 0, 1);
 
         // buffer on vertex shader
         device.queue.writeBuffer(this._modelViewProjBuffer as GPUBuffer, 0, mvp as ArrayBuffer);
@@ -127,7 +145,8 @@ class ExLight {
 
         // buffer on fragment shader
         device.queue.writeBuffer(this._lightPosBuffer as GPUBuffer, 0, lightPosition as ArrayBuffer);
-        device.queue.writeBuffer(this._lightColorBuffer as GPUBuffer, 0, lightColor as ArrayBuffer);
+        device.queue.writeBuffer(this._eyePosBuffer as GPUBuffer, 0, cameraPosition as ArrayBuffer);
+        // device.queue.writeBuffer(this._lightColorBuffer as GPUBuffer, 0, lightColor as ArrayBuffer);
 
 
         //
@@ -172,7 +191,8 @@ class ExLight {
         renderPass.setBindGroup(0, this._bindGroup);    // model-view-projection matrix
         renderPass.setBindGroup(1, this._bindGroup);    // normal matrix
         renderPass.setBindGroup(2, this._bindGroup);    // light position
-        renderPass.setBindGroup(3, this._bindGroup);    // light color
+        renderPass.setBindGroup(3, this._bindGroup);    // camera position
+        // renderPass.setBindGroup(4, this._bindGroup);    // light color
 
         renderPass.draw(numOfVertices);
 
@@ -226,6 +246,10 @@ class ExLight {
             size: 16,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
+        this._eyePosBuffer = device.createBuffer({
+            size: 16,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
         this._lightColorBuffer = device.createBuffer({
             size: 16,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
@@ -261,7 +285,14 @@ class ExLight {
                     buffer: {
                         type: 'uniform'
                     }
-                }
+                },
+                // {
+                //     binding: 4,
+                //     visibility: GPUShaderStage.FRAGMENT,
+                //     buffer: {
+                //         type: 'uniform'
+                //     }
+                // }
             ]
         })
 
@@ -295,11 +326,19 @@ class ExLight {
                 {
                     binding: 3,
                     resource: {
-                        buffer: this._lightColorBuffer,
+                        buffer: this._eyePosBuffer,
                         offset: 0,
                         size: 16
                     }
-                }
+                },
+                // {
+                //     binding: 4,
+                //     resource: {
+                //         buffer: this._lightColorBuffer,
+                //         offset: 0,
+                //         size: 16
+                //     }
+                // }
             ]
         });
 
