@@ -59,7 +59,7 @@ const fragmentShader = `
 
         var diffuse: f32 = max(dot(N, L), 0.0);
         var specular: f32 = pow(max(dot(N, H), 0.0), specular_shininess);
-        
+
         return color * diffuse + vec4<f32>(1.0, 1.0, 0.0, 1.0) * specular;
     }
 `;
@@ -250,10 +250,10 @@ class ExLight {
             size: 16,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
         });
-        this._lightColorBuffer = device.createBuffer({
-            size: 16,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
+        // this._lightColorBuffer = device.createBuffer({
+        //     size: 16,
+        //     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        // });
 
         // bind group layout
         const uniformBindGroupLayout = device.createBindGroupLayout({
