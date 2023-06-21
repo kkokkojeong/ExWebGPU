@@ -9,6 +9,7 @@ This repository contains test and study code for WebGPU.
 - [Triangle](./samples/triangle.html)
 - [Square](./samples/square.html)
 - [Cube](./samples/cube.html)
+- [Lighting](./samples/light.html)
 
 ### Reference
 - [Introducing WebGPU - Google I/O 2023](https://io.google/2023/program/0da196f5-5169-43ff-91db-8762e2c424a2/intl/ko/)
