@@ -17,7 +17,7 @@
     <canvas id="canvas-webgpu" width="640" height="480"></canvas>
     
     <script type="module">
-        // import ExLight from "/src/examples/light.ts";
+        import ExTextureMapping from "/src/examples/texture-mapping.ts";
         import WebGPUHelper from "/src/util/WebGPUHelper.ts"
 
         window.onload = () => {
@@ -26,8 +26,8 @@
                 return;
             }
 
-            // const ex = new ExLight("canvas-webgpu");
-            // ex.render();
+            const ex = new ExTextureMapping("canvas-webgpu");
+            ex.render();
         };
     </script>
 </body>

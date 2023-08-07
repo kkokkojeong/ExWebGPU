@@ -59,7 +59,7 @@ export const indices = new Uint32Array([
 // ]);
 
 
-export const CubeData = () => {
+export const CubeData = (ul = 1, vl = 1) => {
     const positions = new Float32Array([
         // front
         -1, -1,  1,  
@@ -180,9 +180,30 @@ export const CubeData = () => {
         0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0
     ]);
 
+    const uvs = new Float32Array([
+        //front
+        0, 0, ul, 0, ul, vl, ul, vl, 0, vl, 0, 0,
+
+        //right
+        0, 0, ul, 0, ul, vl, ul, vl, 0, vl, 0, 0,
+
+        //back
+        0, 0, ul, 0, ul, vl, ul, vl, 0, vl, 0, 0,
+
+        //left
+        0, 0, ul, 0, ul, vl, ul, vl, 0, vl, 0, 0,
+
+        //top
+        0, 0, ul, 0, ul, vl, ul, vl, 0, vl, 0, 0,
+
+        //bottom
+        0, 0, ul, 0, ul, vl, ul, vl, 0, vl, 0, 0,
+    ]);
+
     return {
         positions,
         colors,
-        normals
+        normals,
+        uvs
     };
 }
