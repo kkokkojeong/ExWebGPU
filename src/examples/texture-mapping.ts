@@ -48,7 +48,8 @@ const fragmentShader = `
         fsInput: Input
     ) -> @location(0) vec4<f32> {
         // return vec4<f32>(1.0, 0.0, 0.0, 1.0);
-        return textureSample(ourTexture, ourSampler, fsInput.texcoord);
+        var texcoord = vec2<f32>(fsInput.texcoord.x, 1.0 - fsInput.texcoord.y);
+        return textureSample(ourTexture, ourSampler, texcoord);
     }
 `;
 
