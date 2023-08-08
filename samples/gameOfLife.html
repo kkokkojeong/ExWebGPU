@@ -20,6 +20,8 @@
         import GameOfLife from "/src/game-of-life/GameOfLife.ts";
         import WebGPUHelper from "/src/util/WebGPUHelper.ts"
 
+        const UPDATE_INTERVAL = 200; // Update every 200ms (5 times/sec)
+
         window.onload = () => {
             if (!WebGPUHelper.isAvailable()) {
                 alert("not supported browser for WebGPU");
@@ -27,7 +29,11 @@
             }
 
             const ex = new GameOfLife("canvas-webgpu");
-            ex.render();
+
+            // Schedule updateGrid() to run repeatedly
+            setInterval(() => {
+                ex.render();
+            }, UPDATE_INTERVAL);
         }
     </script>
 </body>
