@@ -48,8 +48,7 @@ const fragmentShader = `
     fn fs_main(
         input: VertexOutput
     ) -> @location(0) vec4f {
-        let c = input.cell / grid;
-        return vec4f(c, 1-c.x, 1);
+        return vec4f(input.cell, 1.0 - input.cell.x, 1);
     }
 `;
 
@@ -65,19 +64,43 @@ const computeShader = `
                 (cell.x % u32(grid.x));
     }
   
-    // fn cellActive(x: u32, y: u32) -> u32 {
-    //     return cellStateIn[cellIndex(vec2(x, y))];
-    // }
+    fn cellActive(x: u32, y: u32) -> u32 {
+        return cellStateIn[cellIndex(vec2(x, y))];
+    }
 
     @compute @workgroup_size(${WORKGROUP_SIZE}, ${WORKGROUP_SIZE})
     fn cs_main(
         @builtin(global_invocation_id) cell: vec3u
     ) {
-        if (cellStateIn[cellIndex(cell.xy)] == 1) {
-            cellStateOut[cellIndex(cell.xy)] = 0;
-        } else {
-            cellStateOut[cellIndex(cell.xy)] = 1;
-        }
+        // if (cellStateIn[cellIndex(cell.xy)] == 1) {
+        //     cellStateOut[cellIndex(cell.xy)] = 0;
+        // } else {
+        //     cellStateOut[cellIndex(cell.xy)] = 1;
+        // }
+        // Determine how many active neighbors this cell has.
+            let activeNeighbors = cellActive(cell.x+1, cell.y+1) +
+                                  cellActive(cell.x+1, cell.y) +
+                                  cellActive(cell.x+1, cell.y-1) +
+                                  cellActive(cell.x, cell.y-1) +
+                                  cellActive(cell.x-1, cell.y-1) +
+                                  cellActive(cell.x-1, cell.y) +
+                                  cellActive(cell.x-1, cell.y+1) +
+                                  cellActive(cell.x, cell.y+1);
+
+            let i = cellIndex(cell.xy);
+
+            // Conway's game of life rules:
+            switch activeNeighbors {
+              case 2: { // Active cells with 2 neighbors stay active.
+                cellStateOut[i] = cellStateIn[i];
+              }
+              case 3: { // Cells with 3 neighbors become or stay active.
+                cellStateOut[i] = 1;
+              }
+              default: { // Cells with < 2 or > 3 neighbors become inactive.
+                cellStateOut[i] = 0;
+              }
+            }
     }
 `;
 
@@ -103,7 +126,7 @@ class GameOfLife {
     }
 
     public async render() {
-        await this.initialize();
+        if (!this._initialized) await this.initialize();
 
         const device = this._device;
         const context = this._context;
@@ -113,15 +136,15 @@ class GameOfLife {
         const commandEncoder = device.createCommandEncoder();
 
         // compute pass 가 먼저 실행되고 Render pass 실행
-        // const computePass = commandEncoder.beginComputePass();
+        const computePass = commandEncoder.beginComputePass();
 
-        // computePass.setPipeline(this._computePipeline),
-        // computePass.setBindGroup(0, this._bindGroups[this.step % 2]);
+        computePass.setPipeline(this._computePipeline),
+        computePass.setBindGroup(0, this._bindGroups[this.step % 2]);
 
-        // const workgroupCount = Math.ceil(gridSize / WORKGROUP_SIZE);
-        // computePass.dispatchWorkgroups(workgroupCount, workgroupCount);
+        const workgroupCount = Math.ceil(gridSize / WORKGROUP_SIZE);
+        computePass.dispatchWorkgroups(workgroupCount, workgroupCount);
 
-        // computePass.end();
+        computePass.end();
 
         this.step++;
 
@@ -185,56 +208,10 @@ class GameOfLife {
             }]
         } as GPUVertexBufferLayout;
 
-        // create an uniform buffer
-        const gridSize = this.GRID_SIZE;
-        const uniformArray = new Float32Array([gridSize, gridSize]);
-        const uniformBuffer = device.createBuffer({
-            label: "grid uniforms",
-            size: uniformArray.byteLength,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-        });
-
-        device.queue.writeBuffer(uniformBuffer, 0, uniformArray);
-        
-
-
-        // create an array representing the active state of each cell.
-        const cellStateArray = new Uint32Array(gridSize * gridSize);
-
-        // create a storage buffer to hold the cell state.
-        const cellStateStorage = [
-            device.createBuffer({
-                label: "cell state A",
-                size: cellStateArray.byteLength,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-            }),
-            device.createBuffer({
-                label: "cell state B",
-                size: cellStateArray.byteLength,
-                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
-            })
-        ];
-
-        // Mark every third cell of the first grid as active.
-        for (let i = 0; i < cellStateArray.length; i +=3) {
-            cellStateArray[i] = 1;
-        }
-        device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
-
-        // Mark every other cell of the second grid as active.
-        for (let i = 0; i < cellStateArray.length; i++) {
-            cellStateArray[i] = i % 2;
-        }
-        device.queue.writeBuffer(cellStateStorage[1], 0, cellStateArray);
-
+    
         const cellShaderModule = device.createShaderModule({
             label: "cell shader",
             code: `${vertexShader} \n ${fragmentShader}`
-        })
-
-        const simulationShaderModule = device.createShaderModule({
-            label: "simulation shader",
-            code: computeShader
         })
 
         const bindGroupLayout = device.createBindGroupLayout({
@@ -258,14 +235,15 @@ class GameOfLife {
             ]
         });
 
-        // const pipelineLayout = device.createPipelineLayout({
-        //     label: "cell pipeline layout",
-        //     bindGroupLayouts: [ bindGroupLayout ]
-        // })
+        const pipelineLayout = device.createPipelineLayout({
+            label: "cell pipeline layout",
+            bindGroupLayouts: [ bindGroupLayout ]
+        })
 
         const cellPipeline = device.createRenderPipeline({
             label: "cell pipeline!!",
-            layout: "auto", //pipelineLayout,
+            layout: pipelineLayout,
+            // layout: "auto", //pipelineLayout,
             vertex: {
                 module: cellShaderModule,
                 entryPoint: "vs_main",
@@ -280,20 +258,74 @@ class GameOfLife {
             }
         });
 
+        // Create the compute shader that will process the game of life simulation.
+        const simulationShaderModule = device.createShaderModule({
+            label: "simulation shader",
+            code: computeShader
+        });
+
         // Create a compute pipeline that updates the game state.
-        // const simulationPipeline = device.createComputePipeline({
-        //     label: "cell simulation pipeline",
-        //     layout: pipelineLayout,
-        //     compute: {
-        //         module: simulationShaderModule,
-        //         entryPoint: "cs_main"
-        //     }
-        // })
+        const simulationPipeline = device.createComputePipeline({
+            label: "cell simulation pipeline",
+            layout: pipelineLayout,
+            compute: {
+                module: simulationShaderModule,
+                entryPoint: "cs_main"
+            }
+        });
+
+        // create an uniform buffer
+        const gridSize = this.GRID_SIZE;
+        const uniformArray = new Float32Array([gridSize, gridSize]);
+        const uniformBuffer = device.createBuffer({
+            label: "grid uniforms",
+            size: uniformArray.byteLength,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+
+        device.queue.writeBuffer(uniformBuffer, 0, uniformArray);
+
+        // create an array representing the active state of each cell.
+        const cellStateArray = new Uint32Array(gridSize * gridSize);
+
+        // create a storage buffer to hold the cell state.
+        const cellStateStorage = [
+            device.createBuffer({
+                label: "cell state A",
+                size: cellStateArray.byteLength,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+            }),
+            device.createBuffer({
+                label: "cell state B",
+                size: cellStateArray.byteLength,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+            })
+        ];
+
+        // Mark every third cell of the first grid as active.
+        // for (let i = 0; i < cellStateArray.length; i +=3) {
+        //     cellStateArray[i] = 1;
+        // }
+        // device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
+
+        // Mark every other cell of the second grid as active.
+        // for (let i = 0; i < cellStateArray.length; i++) {
+        //     cellStateArray[i] = i % 2;
+        // }
+        // device.queue.writeBuffer(cellStateStorage[1], 0, cellStateArray);
+
+        // Set each cell to a random state, then copy the JavaScript array
+        // into the storage buffer.
+        for (let i = 0; i < cellStateArray.length; ++i) {
+            cellStateArray[i] = Math.random() > 0.6 ? 1 : 0;
+        }
+        device.queue.writeBuffer(cellStateStorage[0], 0, cellStateArray);
 
         const bindGroups = [
             device.createBindGroup({
                 label: "cell renderer bind group A",
-                layout: cellPipeline.getBindGroupLayout(0), //bindGroupLayout,
+                layout: bindGroupLayout,
+                // layout: cellPipeline.getBindGroupLayout(0), //bindGroupLayout,
                 entries: [
                     {
                         binding: 0,
@@ -303,15 +335,16 @@ class GameOfLife {
                         binding: 1,
                         resource: { buffer: cellStateStorage[0] }
                     },
-                    // {
-                    //     binding: 2,
-                    //     resource: { buffer: cellStateStorage[1] }
-                    // }
+                    {
+                        binding: 2,
+                        resource: { buffer: cellStateStorage[1] }
+                    }
                 ]
             }),
             device.createBindGroup({
                 label: "cell renderer bind group B",
-                layout: cellPipeline.getBindGroupLayout(0), //bindGroupLayout,
+                layout: bindGroupLayout,
+                // layout: cellPipeline.getBindGroupLayout(0), //bindGroupLayout,
                 entries: [
                     {
                         binding: 0,
@@ -321,18 +354,19 @@ class GameOfLife {
                         binding: 1,
                         resource: { buffer: cellStateStorage[1] }
                     },
-                    // {
-                    //     binding: 2,
-                    //     resource: { buffer: cellStateStorage[0] }
-                    // }
+                    {
+                        binding: 2,
+                        resource: { buffer: cellStateStorage[0] }
+                    }
                 ]
             })
         ];
 
+
         this._device = device;
         this._context = context;
         this._pipeline = cellPipeline;
-        // this._computePipeline = simulationPipeline;
+        this._computePipeline = simulationPipeline;
 
 
         this._vertexBuffer = vertexBuffer;
