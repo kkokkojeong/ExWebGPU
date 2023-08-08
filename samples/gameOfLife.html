@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<head>
+   <meta charset="utf-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <title>WebGPU Conway's Game of Life</title>
+   <meta name="description" content="">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+   <!-- dat.GUI -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js" integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+
+<body>
+    <h1>Conway's Game of Life</h1><br>
+
+    <div id="dat-gui"></div>
+    <canvas id="canvas-webgpu" width="512" height="512"></canvas>
+    
+    <script type="module">
+        import GameOfLife from "/src/game-of-life/GameOfLife.ts";
+        import WebGPUHelper from "/src/util/WebGPUHelper.ts"
+
+        window.onload = () => {
+            if (!WebGPUHelper.isAvailable()) {
+                alert("not supported browser for WebGPU");
+                return;
+            }
+
+            const ex = new GameOfLife("canvas-webgpu");
+            ex.render();
+        }
+    </script>
+</body>
+</html>
